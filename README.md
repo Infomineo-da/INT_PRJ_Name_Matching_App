@@ -44,13 +44,6 @@ The source data goes through various steps of cleaning to ensure a smooth matchi
      * **all-mpnet-base-v2**: Very strong for short-text semantic similarity. Outperforms MiniLM on tasks like name matching.
      * **paraphrase-multilingual-MiniLM-L12-v2**: Handles cross-lingual cases.
 
-* **LLM Matching (Gemini API)**:
-  * Prompting an LLM to match the client name with a list of candidates while strictly following the given instructions.
-  * API is expected to return a structured output with:
-      * best_match
-      * confidence_score
-      * reasoning
-
 ## Prerequisites
 
 Ensure you have Python 3.8+ installed. Install the required packages:

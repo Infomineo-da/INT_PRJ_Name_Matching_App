@@ -66,33 +66,6 @@ Additional dependencies (if used in scripts/notebooks):
 
 ## Usage
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/Infomineo-da/Global-Text-Matching.git
-   cd Global-Text-Matching
-   ```
-
-2. Navigate to the scripts folder:
-
-   ```bash
-   cd Banks_Similarity/scripts
-   ```
-
-3. Run the Names Cleaning notebook:
-
-   ```bash
-   jupyter notebook Names_Cleaning.ipynb
-   ```
-
-4. Run the different techniques available.
-
-   ```bash
-   jupyter notebook Semantic_Matching.ipynb
-   jupyter notebook FuzzyWuzzy_Matching.ipynb
-   ```
-
-6. Output files will be saved as `.xlsx` files in the output folder.
 
 ## Contributing
 

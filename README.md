@@ -3,7 +3,7 @@ This app provides an interactive solution for comparing and matching text data â
 
 ## **Table of Contents**:
 
-* [Step-by-Step Interface](Step-by-Step_Interface)
+* [Step-by-Step Interface](Step-by-Step Interface)
 * [Data_Cleaning](#Data_Cleaning)
 * [Text_Matching](#Text_Matching)
 * [Prerequisites](#prerequisites)

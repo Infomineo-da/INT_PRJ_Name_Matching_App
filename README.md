@@ -3,14 +3,14 @@ This app provides an interactive solution for comparing and matching text data â
 
 ## **Table of Contents**:
 
-* [Step-by-Step Interface](Step-by-Step Interface)
+* [Step-by-Step Interface](Step-by-Step-Interface)
 * [Data_Cleaning](#Data_Cleaning)
 * [Text_Matching](#Text_Matching)
 * [Prerequisites](#prerequisites)
 * [Usage](#usage)
 * [Contributing](#contributing)
 
-## Step-by-Step Interface
+## Step-by-Step-Interface
 A clean Streamlit interface guides the user through each stage:
 
 1. Upload Files: Upload Excel file with at least two columns to be matched.

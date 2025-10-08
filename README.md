@@ -1,15 +1,32 @@
 # Name-Matching-App
 This app provides an interactive solution for comparing and matching text data — such as product names, company names, or descriptions — between two sources(columns).
 
-## Overview
+## **Table of Contents**:
 
-**Table of Contents**:
-
+* [Step-by-Step Interface](Step-by-Step_Interface)
 * [Data_Cleaning](#Data_Cleaning)
 * [Text_Matching](#Text_Matching)
 * [Prerequisites](#prerequisites)
 * [Usage](#usage)
 * [Contributing](#contributing)
+
+## Step-by-Step Interface
+A clean Streamlit interface guides the user through each stage:
+
+1. Upload Files: Upload Excel file with at least two columns to be matched.
+
+2. Select Columns: Choose the text columns to be matched.
+
+3. Choose Matching Method:
+  * Fuzzy Matching – compares text similarity based on character patterns (FuzzyWuzzy).
+  * Semantic Matching – uses sentence-transformer models to capture meaning beyond simple word matching.
+
+4. Custom Stop Words:
+Add words to be ignored during matching (e.g., “station,” “corp,” “ltd”).
+You can also include common words like “the,” “in,” or “of,” but use them carefully as they might be part of actual names.
+
+5. Results & Export:
+View the matching results, review similarity scores, and download the final matched file.
 
 ## Data_Cleaning
 The source data goes through various steps of cleaning to ensure a smooth matching process.
@@ -49,7 +66,7 @@ The source data goes through various steps of cleaning to ensure a smooth matchi
 Ensure you have Python 3.8+ installed. Install the required packages:
 
 ```bash
-pip install sentence_transformers tqdm pandas torch fuzzywuzzy thefuzz
+pip install -r requirements.txt
 ```
 
 Additional dependencies (if used in scripts/notebooks):
@@ -59,7 +76,24 @@ Additional dependencies (if used in scripts/notebooks):
 
 ## Usage
 
+1. Clone the repository:
 
+   ```bash
+   git clone https://github.com/Infomineo-da/INT_PRJ_Name_Matching_App.git
+   cd INT_PRJ_Name_Matching_App
+   ```
+
+2. Navigate to the scripts folder:
+
+   ```bash
+   cd INT_PRJ_Name_Matching_App/Scripts
+   ```
+   
+3. Run the App_UI file:
+
+   ```bash
+   streamlit run Script/App_UI.py
+   ```
 ## Contributing
 
 1. Fork the repository

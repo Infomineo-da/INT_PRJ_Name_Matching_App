@@ -9,7 +9,7 @@ from Semantic_Matching import semantic_match_blocking
 st.set_page_config(page_title="Text Matching App 🔍", layout="wide")
 
 # Title
-st.title("**INFOMATCH**🔍")
+st.title("**InfoMatch**🔍")
 
 # Upload Section
 uploaded_file = st.file_uploader("**Upload your Excel file**: containing two **text** columns to match.", type=["xlsx", "xls"])
@@ -122,11 +122,10 @@ with st.form("stop_words_form"):
     "- For hospitals → hospital, clinic, medical center, etc.\n"
     "- You may also ignore common words like -> the, in, a, of, over, etc. but be careful! Sometimes they are part of the real name"
     )
-    c1,c2=st.columns([0.94, 0.06])
-    with c1:
-        st.caption("")
-    with c2:
-        submitted = st.form_submit_button(label="Proceed..")
+    # Add spacer and submit button - uses st.write() for spacing instead of hardcoded columns
+    _, col_button = st.columns([10, 1])  # Dynamic ratio that adapts to screen size
+    with col_button:
+        submitted = st.form_submit_button(label="Proceed..", use_container_width=True)
 
 # Process and show the provided stop words after submission
 stop_words_list=[]
@@ -286,12 +285,10 @@ if uploaded_file and submitted:
         output_buffer = io.BytesIO()
         final.to_excel(output_buffer, index=False, engine="openpyxl")
         output_buffer.seek(0)
-        c1,c2=st.columns([0.88, 0.12])
-        with c1:    
-            st.caption("")
-        with c2:    
+        _, download_button = st.columns([10, 1])  # Dynamic ratio that adapts to screen size
+        with download_button:   
             st.download_button(
-                label="📥 Download Final File",
+                label="📥 Download File",
                 data=output_buffer,
                 file_name=f'{matching_method} Results.xlsx',
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

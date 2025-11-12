@@ -10,9 +10,6 @@ def exact_match(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     col1_cleaned = [c for c in df1.columns if c.endswith("_cleaned")][0]
     col2_cleaned = [c for c in df2.columns if c.endswith("_cleaned")][0]
 
-    col1_sorted = [c for c in df1.columns if c.endswith("_sorted")][0]
-    col2_sorted = [c for c in df2.columns if c.endswith("_sorted")][0]
-
     # Filter out empty or NaN values before matching
     df1_valid = df1[df1[col1_cleaned].notna() & (df1[col1_cleaned] != "")].copy()
     df2_valid = df2[df2[col2_cleaned].notna() & (df2[col2_cleaned] != "")].copy()
@@ -21,8 +18,8 @@ def exact_match(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     df1_valid['temp_id'] = range(len(df1_valid))
     df2_valid['temp_id'] = range(len(df2_valid))
 
-    # --- Stage 1: Match on cleaned column ---
-    stage1_matches = pd.merge(
+    # --- Exact Match: Match on cleaned column ---
+    exact_matches = pd.merge(
         df1_valid,
         df2_valid,
         left_on=col1_cleaned,
@@ -31,52 +28,25 @@ def exact_match(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     )
     
     # Remove duplicates keeping the best match for both df1 and df2
-    stage1_matches = stage1_matches.sort_values('temp_id_x')
-    #stage1_matches = stage1_matches.drop_duplicates(subset=['temp_id_x'], keep='first')
-    #stage1_matches = stage1_matches.drop_duplicates(subset=['temp_id_y'], keep='first')
-    stage1_matches["match_score"] = 100
-    stage1_matches["match_type"] = "primary key"
+    exact_matches = exact_matches.sort_values('temp_id_x')
+    exact_matches["match_score"] = 100
+    exact_matches["match_type"] = "Exact Match"
 
     # Track matched records from df2
-    matched_df2_ids = stage1_matches['temp_id_y'].unique()
+    matched_df2_ids = exact_matches['temp_id_y'].unique()
     
-    # Identify unmatched records from df1 after Stage 1
-    unmatched_stage1 = df1_valid[~df1_valid['temp_id'].isin(stage1_matches['temp_id_x'])]
-    df2_remaining = df2_valid[~df2_valid['temp_id'].isin(matched_df2_ids)]
+    # Identify unmatched records from df1
+    unmatched_final = df1[~df1_valid['temp_id'].isin(exact_matches['temp_id_x'])]
 
-    # --- Stage 2: Match remaining unmatched on sorted column ---
-    stage2_matches = pd.merge(
-        unmatched_stage1[unmatched_stage1[col1_sorted].notna() & (unmatched_stage1[col1_sorted] != "")],
-        df2_remaining,
-        left_on=col1_sorted,
-        right_on=col2_sorted,
-        how="inner"
-    )
-    
-    # Remove duplicates keeping the best match for both sides
-    stage2_matches = stage2_matches.sort_values('temp_id_x')
-    #stage2_matches = stage2_matches.drop_duplicates(subset=['temp_id_x'], keep='first')
-    #stage2_matches = stage2_matches.drop_duplicates(subset=['temp_id_y'], keep='first')
-    stage2_matches["match_score"] = 99
-    stage2_matches["match_type"] = "sorted key"
-
-    # --- Final unmatched after Stage 2 ---
-    unmatched_final = df1[~df1_valid['temp_id'].isin(
-        pd.concat([stage1_matches['temp_id_x'], stage2_matches['temp_id_x']], ignore_index=True)
-    )]
-
-    # --- Combine matches ---
-    # Drop temporary columns before combining
-    stage1_matches = stage1_matches.drop(['temp_id_x', 'temp_id_y'], axis=1)
-    stage2_matches = stage2_matches.drop(['temp_id_x', 'temp_id_y'], axis=1)
-    all_exact_matches = pd.concat([stage1_matches, stage2_matches], ignore_index=True)
+    # Drop temporary columns
+    exact_matches = exact_matches.drop(['temp_id_x', 'temp_id_y'], axis=1)
 
     # Final cleanup of any remaining empty matches
-    all_exact_matches = all_exact_matches[
-        all_exact_matches[col1_cleaned].notna() & 
-        (all_exact_matches[col1_cleaned] != "") &
-        all_exact_matches[col2_cleaned].notna() & 
-        (all_exact_matches[col2_cleaned] != "")
+    exact_matches = exact_matches[
+        exact_matches[col1_cleaned].notna() & 
+        (exact_matches[col1_cleaned] != "") &
+        exact_matches[col2_cleaned].notna() & 
+        (exact_matches[col2_cleaned] != "")
     ]
 
     # Clean unmatched records
@@ -86,10 +56,32 @@ def exact_match(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     ]
     unmatched_final = unmatched_final.drop_duplicates(subset=[col1_cleaned], keep='first')
 
-    return all_exact_matches, unmatched_final
+    return exact_matches, unmatched_final
 
 
 ##############################################################################
+
+
+import pandas as pd
+
+
+def map_ui_method_to_fuzzy(ui_method):
+    """
+    Map UI display names to actual fuzzy matching method names.
+    
+    Args:
+        ui_method (str): The method name from the UI dropdown
+        
+    Returns:
+        str: The corresponding fuzzy matching method name
+    """
+    method_mapping = {
+        "Exact Sequence Match": "ratio",
+        "Substring Inclusion Match": "partial_ratio",
+        "Order-Insensitive Match": "token_sort_ratio",
+        "Core Word Set Match": "token_set_ratio"
+    }
+    return method_mapping.get(ui_method, "token_set_ratio")  # Default to token_set_ratio
 
 
 def build_blocks(df, col_cleaned, prefix_len=4):

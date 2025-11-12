@@ -2,14 +2,14 @@ import streamlit as st
 import pandas as pd
 import io
 from Data_Cleaning import clean_dataframe
-from Fuzzy_Matching import exact_match, fuzzy_match_blocking, build_final_output
+from Fuzzy_Matching import exact_match, fuzzy_match_blocking, build_final_output, map_ui_method_to_fuzzy
 from Hypird_Matching import hybrid_match_blocking
 from Semantic_Matching import semantic_match_blocking
 
 st.set_page_config(page_title="Text Matching App 🔍", layout="wide")
 
 # Title
-st.title("Text Matching App 🔍")
+st.title("**INFOMATCH**🔍")
 
 # Upload Section
 uploaded_file = st.file_uploader("**Upload your Excel file**: containing two **text** columns to match.", type=["xlsx", "xls"])
@@ -64,7 +64,7 @@ if uploaded_file:
                 df = df[selected_cols]
 
         with st.spinner(''):
-            st.write("Preview of uploaded file:")
+            st.write("Preview of Uploaded File:")
             st.dataframe(df.head())
         
     except Exception as e:
@@ -76,37 +76,43 @@ if uploaded_file:
 dropdown, score, icon = st.columns([0.80, 0.15, 0.05])  # keep dropdown and helper aligned
 with dropdown:
     matching_method = st.selectbox(
-        "**Choose a matching technique**:click on the ❗ icon for details.",
-        ["ratio", "partial_ratio", "token_sort_ratio", "token_set_ratio",
-         "Semantic Matching","Hybrid (Fuzzy + Semantic)"]
+        #: Click on the ℹ️ icon for details.
+        "**Choose a Matching Technique**",
+        ["Exact Sequence Match", "Substring Inclusion Match", "Order-Insensitive Match", "Core Word Set Match",
+         "Semantic Match","Hybrid Match"]
     )
 with score:
-    score=st.number_input("Minimum score threshold.", min_value=60, max_value=100, value=75, step=1)
+    score=st.number_input("Minimum Score Threshold", min_value=60, max_value=100, value=75, step=5)
 with icon:
     # Push popover down a bit to alighn with the title
     st.markdown("<br>", unsafe_allow_html=True)
-    with st.popover("❗",help="Description of matching methods"):
+    with st.popover("ℹ️",help="Description of matching methods"):
         st.markdown("""
         #### **Choose the matching methodology**
-        ##### **➡ FuzzyWuzzy**
-        It works well for detecting spelling differences, rearrangements, and partial matches, making it effective for cases where text values are similar but not identical.
-        - **Ratio** -> When you want a strict comparison of the entire string. Best if the strings are already normalized/cleaned and order matters.
-        - **Partial_Ratio** -> When one string may be embedded inside another. Good for matching short forms against long descriptions.
-        - **Token_Sort_Ratio** -> When the strings have the same words but in different orders.
-        - **Token_Set_Ratio** -> When strings share a common subset of words but one has extra info. Best for messy data with additional descriptive words.
-        ##### **➡ Semantic Matching**
-        - **SentenceTransformer** -> It's effective for understanding context, synonyms, and paraphrases. learned from billions of sentences.
+        ##### **FuzzyWuzzy**
+        - **Exact Sequence Match**: Performs a strict, full-string comparison. This method is ideal when both strings are already normalized and the exact order of characters matters.
+        - **Substring Inclusion Match**: Detects cases where one string is embedded within another, such as matching abbreviations, truncated forms, or shorter references to longer text descriptions.
+        - **Order-Insensitive Match**: Evaluates similarity based on the same set of words appearing in different orders. Useful when word arrangement varies but the overall content remains equivalent.
+        - **Core Word Set Match**: Focuses on the shared subset of words between two strings, while ignoring additional or extraneous terms. Well-suited for noisy or descriptive data where extra details may be present.
+        ##### **Semantic Matching**
+        - **SentenceTransformer**: It's effective for understanding context, synonyms, and paraphrases. learned from billions of sentences.
+        ##### **Minimum Score Threshold**
+        The Minimum Score Threshold defines the lowest similarity score required for two text values to be considered a valid match.
+        It acts as a filter to exclude weak or irrelevant matches, ensuring that only results with sufficient similarity are accepted.
+        - **Range**: 60% (minimum) and above
+        - **Guideline**: The higher the threshold, the stricter and more accurate the matching results will be.
+        - **Example**: A threshold of 60% allows moderately similar text to qualify as a match, while 85–90% ensures only very closely related text pairs are considered.
         ##### **Disclaimer**: 
         Sentence transformers capture semantic meaning but may over-match by treating related concepts as equivalent, leading to false positives. Fuzzy matching, on the other hand, focuses on text similarity but may under-match when the same concept is expressed in different wording.
         """)
 
-st.write(f"You selected: **{matching_method}** with threshold of **{score}**")
+st.write(f"You selected: **{matching_method}** with Threshold of **{score}**")
 
 # Stop Words Input
 # Wrap text_area + button in a form
 with st.form("stop_words_form"):
     stop_words = st.text_area(
-    "**Ignore words when comparing names**: Add words you don’t want to affect the match (comma separated).",
+    "**Ignore Words**: List any words to exclude from the comparison process. These words will not influence the name-matching score. Separate multiple entries with commas.",
     placeholder="e.g. station, fuel, gas, corp, ltd, inc, group, university, hospital, restaurant"
     )
     st.caption(
@@ -116,13 +122,18 @@ with st.form("stop_words_form"):
     "- For hospitals → hospital, clinic, medical center, etc.\n"
     "- You may also ignore common words like -> the, in, a, of, over, etc. but be careful! Sometimes they are part of the real name"
     )
-    submitted = st.form_submit_button(label="Proceed..")
+    c1,c2=st.columns([0.94, 0.06])
+    with c1:
+        st.caption("")
+    with c2:
+        submitted = st.form_submit_button(label="Proceed..")
 
 # Process and show the provided stop words after submission
-if submitted:
+stop_words_list=[]
+if submitted and len(stop_words) != 0:
     stop_words_list = [w.strip() for w in stop_words.split(",") if w.strip()]
     st.write("Ignored words:")
-    st.write("➡",", ".join(stop_words_list))
+    st.write("",", ".join(stop_words_list))
 
 # Process the data if file is uploaded and stop words are submitted
 if uploaded_file and submitted:
@@ -146,7 +157,7 @@ if uploaded_file and submitted:
         st.success('Stage 1/3: Data cleaning completed!')
         
         # Display cleaning statistics
-        st.write("📊 Cleaning Statistics:")
+        st.write("📊 Data Cleaning Summary:")
         col1, col2 = st.columns(2)
         with col1:
             # Count only non-empty original records
@@ -154,16 +165,16 @@ if uploaded_file and submitted:
             cleaned_records = len(cleaned_df1)
             removed_records = total_records - cleaned_records
             st.metric(f"Column 1: {cols[0]}", 
-                     f"{cleaned_records:,} records cleaned",
-                     f"{removed_records:,} removed")
+                     f"{cleaned_records:,} Records Cleaned",
+                     f"{removed_records:,} Duplicates Removed")
         with col2:
             # Count only non-empty original records
             total_records = df2[cols[1]].notna().sum()
             cleaned_records = len(cleaned_df2)
             removed_records = total_records - cleaned_records
             st.metric(f"Column 2: {cols[1]}", 
-                     f"{cleaned_records:,} records cleaned",
-                     f"{removed_records:,} removed")
+                     f"{cleaned_records:,} Records Cleaned",
+                     f"{removed_records:,} Duplicates Removed")
 
     # Stage 2: Exact Matching
     with st.spinner('Stage 2/3: Performing exact matching...'):
@@ -172,14 +183,14 @@ if uploaded_file and submitted:
             st.success('Stage 2/3: Exact matching completed!')
             
             # Display exact matching statistics
-            st.write("📊 Exact Matching Statistics:")
-            col1, col2 = st.columns(2)
-            with col1:
-                primary_matches = len(matched_df[matched_df['match_type'] == 'primary key'])
-                st.metric("Exact Matches", f"{primary_matches:,} records")
-            with col2:
-                sorted_matches = len(matched_df[matched_df['match_type'] == 'sorted key'])
-                st.metric("Sorted Key Matches", f"{sorted_matches:,} records")
+            st.write("📊 Exact Matching Summary:")
+            #col1, col2 = st.columns(2)
+            #with col1:
+            primary_matches = len(matched_df[matched_df['match_type'] == 'Exact Match'])
+            st.metric("Exact Matches", f"{primary_matches:,} Records")
+            #with col2:
+                #sorted_matches = len(matched_df[matched_df['match_type'] == 'sorted key'])
+                #st.metric("Sorted Key Matches", f"{sorted_matches:,} Records")
             
             matched_df.to_excel('Data/Output/matched_exact.xlsx', index=False)
         except Exception as e:
@@ -192,7 +203,7 @@ if uploaded_file and submitted:
             progress_bar = st.progress(0)
             status_text = st.empty()
             
-            if matching_method == "Semantic Matching":
+            if matching_method == "Semantic Match":
                 status_text.text("🔄 Loading model and generating embeddings...")
                 stage3_matches = semantic_match_blocking(
                     unmatched_df,   # df1 records left unmatched
@@ -200,8 +211,8 @@ if uploaded_file and submitted:
                     threshold=score,    # adjust threshold as needed
                     progress_callback=lambda p, msg: (progress_bar.progress(p), status_text.text(msg))
                 )
-                match_type = "semantic"
-            elif matching_method == "Hybrid (Fuzzy + Semantic)":
+                match_type = "Semantic"
+            elif matching_method == "Hybrid Match":
                 stage3_matches = hybrid_match_blocking(
                 unmatched_df,
                 cleaned_df2,
@@ -210,13 +221,13 @@ if uploaded_file and submitted:
                 semantic_threshold=score,         # reuse same threshold
                 progress_callback=lambda p, msg: (progress_bar.progress(p), status_text.text(msg))
                 )
-                match_type = "hybrid"
+                match_type = "Hybrid"
             else:
                 status_text.text("🔄 Preparing fuzzy matching...")
                 stage3_matches = fuzzy_match_blocking(
                     unmatched_df,   # df1 records left unmatched
                     cleaned_df2,    # full df2 reference
-                    method=matching_method,  
+                    method=map_ui_method_to_fuzzy(matching_method),  
                     threshold=score,    # adjust threshold as needed
                     progress_callback=lambda p, msg: (progress_bar.progress(p), status_text.text(msg))
                 )
@@ -229,11 +240,11 @@ if uploaded_file and submitted:
             st.success('Stage 3/3: Advanced matching completed!')
             
             # Display advanced matching statistics
-            st.write(f"📊 {match_type.capitalize()} Matching Statistics:")
+            st.write(f"📊 {matching_method}ing Summary:")
             col1, col2, col3 = st.columns(3)
             with col1:
                 advanced_matches = len(stage3_matches)
-                st.metric(f"{match_type.capitalize()} Matches", 
+                st.metric(f"{matching_method}s", 
                          f"{advanced_matches:,} records")
             with col2:
                 if not stage3_matches.empty:
@@ -265,7 +276,7 @@ if uploaded_file and submitted:
         with col2:
             st.metric("Total Matched", f"{matched_records:,}")
         with col3:
-            st.metric("Match Rate", f"{match_rate:.1f}%")
+            st.metric("Total Match Rate", f"{match_rate:.1f}%")
             
         st.write("---")  # Add a visual separator
         st.write("Final results preview:")
@@ -275,13 +286,16 @@ if uploaded_file and submitted:
         output_buffer = io.BytesIO()
         final.to_excel(output_buffer, index=False, engine="openpyxl")
         output_buffer.seek(0)
-
-        st.download_button(
-            label="📥 Download Final Matched File",
-            data=output_buffer,
-            file_name=f'matched_{matching_method}.xlsx',
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        c1,c2=st.columns([0.88, 0.12])
+        with c1:    
+            st.caption("")
+        with c2:    
+            st.download_button(
+                label="📥 Download Final File",
+                data=output_buffer,
+                file_name=f'{matching_method} Results.xlsx',
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
     except Exception as e:
             st.error(f"⚠️ Final output failed: {e}")
             st.stop()

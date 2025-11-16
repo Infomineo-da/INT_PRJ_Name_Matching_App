@@ -70,13 +70,13 @@ def semantic_match_blocking(unmatched_df, df2, threshold=SEMANTIC_MATCH_THRESHOL
     
     # Generate embeddings with caching, passing the MODEL_NAME constant
     if progress_callback:
-        progress_callback(15, "🔄 Generating embeddings for reference data...")
+        progress_callback(15, "🔄 Analyzing your reference data...")
     
     # Pass MODEL_NAME as the cache key dependency
     df2_embeddings = generate_text_embeddings(df2_texts, model_name=MODEL_NAME)
     
     if progress_callback:
-        progress_callback(40, "🔄 Generating embeddings for unmatched records...")
+        progress_callback(40, "🔄 Analyzing the unmatched records...")
     
     df1_embeddings = generate_text_embeddings(df1_texts, model_name=MODEL_NAME)
     

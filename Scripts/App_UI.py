@@ -199,7 +199,7 @@ if uploaded_file and submitted:
             status_text = st.empty()
             
             if matching_method == "Semantic Match":
-                status_text.text("🔄 Loading model and generating embeddings...")
+                status_text.text("🔄 Loading model and Analyzing your data...")
                 stage3_matches = semantic_match_blocking(
                     unmatched_df,   # df1 records left unmatched
                     cleaned_df2,    # full df2 reference

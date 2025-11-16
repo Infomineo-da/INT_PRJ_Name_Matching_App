@@ -6,7 +6,7 @@ from Fuzzy_Matching import exact_match, fuzzy_match_blocking, build_final_output
 from Hypird_Matching import hybrid_match_blocking
 from Semantic_Matching import semantic_match_blocking
 
-st.set_page_config(page_title="Text Matching App 🔍", layout="wide")
+st.set_page_config(page_title="InfoMatch 🔍", layout="wide")
 
 # Title
 st.title("**InfoMatch**🔍")
@@ -125,7 +125,7 @@ with st.form("stop_words_form"):
     # Add spacer and submit button - uses st.write() for spacing instead of hardcoded columns
     _, col_button = st.columns([10, 1])  # Dynamic ratio that adapts to screen size
     with col_button:
-        submitted = st.form_submit_button(label="Proceed..", use_container_width=True)
+        submitted = st.form_submit_button(label="Proceed..", width = "stretch")
 
 # Process and show the provided stop words after submission
 stop_words_list=[]
@@ -155,25 +155,21 @@ if uploaded_file and submitted:
         
         st.success('Stage 1/3: Data cleaning completed!')
         
-        # Display cleaning statistics
+        # Display cleaning statistics in custom format
         st.write("📊 Data Cleaning Summary:")
-        col1, col2 = st.columns(2)
-        with col1:
-            # Count only non-empty original records
-            total_records = df1[cols[0]].notna().sum()
-            cleaned_records = len(cleaned_df1)
-            removed_records = total_records - cleaned_records
-            st.metric(f"Column 1: {cols[0]}", 
-                     f"{cleaned_records:,} Records Cleaned",
-                     f"{removed_records:,} Duplicates Removed")
-        with col2:
-            # Count only non-empty original records
-            total_records = df2[cols[1]].notna().sum()
-            cleaned_records = len(cleaned_df2)
-            removed_records = total_records - cleaned_records
-            st.metric(f"Column 2: {cols[1]}", 
-                     f"{cleaned_records:,} Records Cleaned",
-                     f"{removed_records:,} Duplicates Removed")
+        
+        # Calculate stats for both columns
+        col1_total = df1[cols[0]].notna().sum()
+        col1_cleaned = len(cleaned_df1)
+        col1_removed = col1_total - col1_cleaned
+        
+        col2_total = df2[cols[1]].notna().sum()
+        col2_cleaned = len(cleaned_df2)
+        col2_removed = col2_total - col2_cleaned
+        
+        # Display in custom format with pipe separators
+        st.write(f"**Col 1: {cols[0]}**   |   {col1_cleaned:,} Records Cleaned   |   {col1_removed:,} Duplicates Removed")
+        st.write(f"**Col 2: {cols[1]}**   |   {col2_cleaned:,} Records Cleaned   |   {col2_removed:,} Duplicates Removed")
 
     # Stage 2: Exact Matching
     with st.spinner('Stage 2/3: Performing exact matching...'):
@@ -285,13 +281,15 @@ if uploaded_file and submitted:
         output_buffer = io.BytesIO()
         final.to_excel(output_buffer, index=False, engine="openpyxl")
         output_buffer.seek(0)
-        _, download_button = st.columns([10, 1])  # Dynamic ratio that adapts to screen size
-        with download_button:   
+        
+        col1, col2 = st.columns([0.85, 0.15])
+        with col2:
             st.download_button(
                 label="📥 Download File",
                 data=output_buffer,
                 file_name=f'{matching_method} Results.xlsx',
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                width = "stretch"
             )
     except Exception as e:
             st.error(f"⚠️ Final output failed: {e}")

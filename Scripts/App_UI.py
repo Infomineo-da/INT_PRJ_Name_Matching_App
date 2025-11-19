@@ -12,7 +12,11 @@ st.set_page_config(page_title="InfoMatch 🔍", layout="wide")
 st.title("**InfoMatch**🔍")
 
 # Upload Section
-uploaded_file = st.file_uploader("**Upload your Excel file**: containing two **text** columns to match.", type=["xlsx", "xls"])
+uploaded_file = st.file_uploader(
+"""Upload your Excel file: containing two text columns to match.\n
+• **Column 1: Principal Column** (The main list)\n
+• **Column 2: Match Column** (The list to be compared to the principal list)"""
+, type=["xlsx", "xls"])
 
 # Preview uploaded file
 if uploaded_file:

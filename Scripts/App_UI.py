@@ -17,7 +17,7 @@ col1, col2 = st.columns([1, 15]) # Adjust the ratio to fit your logo size
 with col1:
     #st.write("")
     #st.write("")
-    st.image("Data\Square logo small 128x128 px.svg", use_container_width = False) # Adjust width as needed
+    st.image("Data/Square logo small 128x128 px.svg", use_container_width = False) # Adjust width as needed
 
 with col2:
     st.title("InfoMatch 🔍")

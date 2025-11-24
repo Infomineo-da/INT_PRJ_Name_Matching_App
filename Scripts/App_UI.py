@@ -6,10 +6,22 @@ from Fuzzy_Matching import exact_match, fuzzy_match_blocking, build_final_output
 from Hypird_Matching import hybrid_match_blocking
 from Semantic_Matching import semantic_match_blocking
 
-st.set_page_config(page_title="InfoMatch 🔍", layout="wide")
+
+st.set_page_config(page_title="InfoMatch 🔍",page_icon="Data\Square logo small 128x128 px.svg", layout="wide")
+
 
 # Title
-st.title("**InfoMatch**🔍")
+# Create two columns: a small one for the logo, a wide one for the title
+col1, col2 = st.columns([1, 15]) # Adjust the ratio to fit your logo size
+
+with col1:
+    #st.write("")
+    #st.write("")
+    st.image("Data\Square logo small 128x128 px.svg", use_container_width = False) # Adjust width as needed
+
+with col2:
+    st.title("InfoMatch 🔍")
+#st.title("**InfoMatch**🔍")
 
 # Upload Section
 uploaded_file = st.file_uploader(

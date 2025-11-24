@@ -7,7 +7,7 @@ from Hypird_Matching import hybrid_match_blocking
 from Semantic_Matching import semantic_match_blocking
 
 
-st.set_page_config(page_title="InfoMatch 🔍",page_icon="Data\Square logo small 128x128 px.svg", layout="wide")
+st.set_page_config(page_title="InfoMatch 🔍",page_icon="Data/Square logo small 128x128 px.svg", layout="wide")
 
 
 # Title
@@ -166,8 +166,8 @@ if uploaded_file and submitted:
         cleaned_df2 = clean_dataframe(df2, [cols[1]], stop_words=stop_words_list)
         
         # Save both cleaned dataframes
-        cleaned_df1.to_excel('Data/Cleaned_Input/cleaned_df1.xlsx', index=False)
-        cleaned_df2.to_excel('Data/Cleaned_Input/cleaned_df2.xlsx', index=False)
+        #cleaned_df1.to_excel('Data/Cleaned_Input/cleaned_df1.xlsx', index=False)
+        #cleaned_df2.to_excel('Data/Cleaned_Input/cleaned_df2.xlsx', index=False)
         
         st.success('Stage 1/3: Data cleaning completed!')
         
@@ -203,7 +203,7 @@ if uploaded_file and submitted:
                 #sorted_matches = len(matched_df[matched_df['match_type'] == 'sorted key'])
                 #st.metric("Sorted Key Matches", f"{sorted_matches:,} Records")
             
-            matched_df.to_excel('Data/Output/matched_exact.xlsx', index=False)
+            #matched_df.to_excel('Data/Output/matched_exact.xlsx', index=False)
         except Exception as e:
             st.error(f"⚠️ Stage 2 failed: {e}")
             st.stop()
@@ -268,7 +268,7 @@ if uploaded_file and submitted:
                     st.metric("High Quality Matches (≥90%)", 
                             f"{high_quality:,} records")
             
-            stage3_matches.to_excel(f'Data/Output/matched_{match_type}.xlsx', index=False)
+            #stage3_matches.to_excel(f'Data/Output/matched_{match_type}.xlsx', index=False)
         except Exception as e:
             st.error(f"⚠️ Stage 3 failed: {e}")
             st.stop()
@@ -292,7 +292,7 @@ if uploaded_file and submitted:
         st.write("---")  # Add a visual separator
         st.write("Final results preview:")
         st.dataframe(final.head())
-        final.to_excel('Data/Output/matched_final.xlsx', index=False)
+        #final.to_excel('Data/Output/matched_final.xlsx', index=False)
 
         output_buffer = io.BytesIO()
         final.to_excel(output_buffer, index=False, engine="openpyxl")

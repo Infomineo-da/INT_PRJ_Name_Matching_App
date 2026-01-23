@@ -1,11 +1,11 @@
-
 import pandas as pd
+import config
 from Fuzzy_Matching import fuzzy_match_blocking
 from Semantic_Matching import semantic_match_blocking
 
-def hybrid_match_blocking(unmatched_df, df2, threshold=80, 
-                          fuzzy_method="token_set_ratio",
-                          semantic_threshold=75,
+def hybrid_match_blocking(unmatched_df, df2, threshold=config.HYBRID_DEFAULT_THRESHOLD,
+                          fuzzy_method=config.HYBRID_FUZZY_METHOD_DEFAULT,
+                          semantic_threshold=config.HYBRID_SEMANTIC_THRESHOLD,
                           progress_callback=None):
     """
     1. Run fuzzy matching.
@@ -31,19 +31,21 @@ def hybrid_match_blocking(unmatched_df, df2, threshold=80,
 
     # The underlying functions rename 'unique_id' to 'unique_id_x' after their merge.
     # We rename it back here to make the output consistent.
-    if not fuzzy_matches.empty and 'unique_id_x' in fuzzy_matches.columns:
-        fuzzy_matches.rename(columns={'unique_id_x': 'unique_id'}, inplace=True)
+    # [CONFIG] Replaced hardcoded "unique_id_x" and "unique_id" with config.ID_COLUMN
+    id_col_x = f"{config.ID_COLUMN}_x"
+    if not fuzzy_matches.empty and id_col_x in fuzzy_matches.columns:
+        fuzzy_matches.rename(columns={id_col_x: config.ID_COLUMN}, inplace=True)
     
     # --- Stage 2: Semantic Matching on the Remainder ---
     
     # Now that 'unique_id' is present, we can safely identify the records that were matched.
     if not fuzzy_matches.empty:
-        matched_in_stage1_ids = fuzzy_matches['unique_id'].unique()
+        matched_in_stage1_ids = fuzzy_matches[config.ID_COLUMN].unique()
     else:
         matched_in_stage1_ids = []
 
     # Create a new DataFrame of records that are STILL unmatched
-    still_unmatched_df = unmatched_df[~unmatched_df['unique_id'].isin(matched_in_stage1_ids)].copy()
+    still_unmatched_df = unmatched_df[~unmatched_df[config.ID_COLUMN].isin(matched_in_stage1_ids)].copy()
 
     semantic_matches = pd.DataFrame() # Initialize an empty DataFrame for the case where it's not needed
     if not still_unmatched_df.empty:
@@ -57,8 +59,8 @@ def hybrid_match_blocking(unmatched_df, df2, threshold=80,
         )
 
         # We perform the same column name correction on the semantic results.
-        if not semantic_matches.empty and 'unique_id_x' in semantic_matches.columns:
-            semantic_matches.rename(columns={'unique_id_x': 'unique_id'}, inplace=True)
+        if not semantic_matches.empty and id_col_x in semantic_matches.columns:
+            semantic_matches.rename(columns={id_col_x: config.ID_COLUMN}, inplace=True)
 
     # --- Combine Results ---
     if progress_callback:

@@ -4,10 +4,9 @@ import pandas as pd
 from tqdm import tqdm
 import numpy as np
 import streamlit as st
+import config
 
-# Constants
-MODEL_NAME = 'all-mpnet-base-v2'  
-SEMANTIC_MATCH_THRESHOLD = 75  # Score threshold for accepting matches (0-100 scale)
+
 
 @st.cache_resource(show_spinner="Loading NLP model...")
 def load_semantic_model():
@@ -17,7 +16,7 @@ def load_semantic_model():
     and reused across all runs.
     """
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = SentenceTransformer(MODEL_NAME, device=device)
+    model = SentenceTransformer(config.SEMANTIC_MODEL_NAME, device=device)
     return model
 
 @st.cache_data(show_spinner=False)
@@ -35,7 +34,7 @@ def generate_text_embeddings(texts, model_name: str):
     model = load_semantic_model()  # Get the cached model
     return model.encode(texts, convert_to_tensor=True, show_progress_bar=True)
 
-def semantic_match_blocking(unmatched_df, df2, threshold=SEMANTIC_MATCH_THRESHOLD, progress_callback=None):
+def semantic_match_blocking(unmatched_df, df2, threshold=config.SEMANTIC_DEFAULT_THRESHOLD, progress_callback=None):
     """
     Perform semantic matching using SentenceTransformers with reciprocal validation.
     Similar interface to fuzzy_match_blocking but uses neural embeddings instead.
@@ -50,8 +49,8 @@ def semantic_match_blocking(unmatched_df, df2, threshold=SEMANTIC_MATCH_THRESHOL
         pd.DataFrame: DataFrame containing the matches found with scores and metadata
     """
     # Get column names
-    col1_cleaned = [c for c in unmatched_df.columns if c.endswith("_cleaned")][0]
-    col2_cleaned = [c for c in df2.columns if c.endswith("_cleaned")][0]
+    col1_cleaned = [c for c in unmatched_df.columns if c.endswith(config.SUFFIX_CLEANED)][0]
+    col2_cleaned = [c for c in df2.columns if c.endswith(config.SUFFIX_CLEANED)][0]
     
     # Ensure strings and fill NaN
     unmatched_df[col1_cleaned] = unmatched_df[col1_cleaned].fillna("").astype(str)
@@ -73,12 +72,12 @@ def semantic_match_blocking(unmatched_df, df2, threshold=SEMANTIC_MATCH_THRESHOL
         progress_callback(15, "🔄 Analyzing your reference data...")
     
     # Pass MODEL_NAME as the cache key dependency
-    df2_embeddings = generate_text_embeddings(df2_texts, model_name=MODEL_NAME)
+    df2_embeddings = generate_text_embeddings(df2_texts, model_name=config.SEMANTIC_MODEL_NAME)
     
     if progress_callback:
         progress_callback(40, "🔄 Analyzing the unmatched records...")
     
-    df1_embeddings = generate_text_embeddings(df1_texts, model_name=MODEL_NAME)
+    df1_embeddings = generate_text_embeddings(df1_texts, model_name=config.SEMANTIC_MODEL_NAME)
     
     if progress_callback:
         progress_callback(65, "🔄 Performing semantic search...")

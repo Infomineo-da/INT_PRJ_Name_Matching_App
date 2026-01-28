@@ -1,4 +1,9 @@
 # config.py
+import os
+
+# Helper to look for Kubernetes ConfigMap values (Environment Variables)
+def get_env(key, default):
+    return os.getenv(key, str(default))
 
 
 

@@ -23,7 +23,7 @@ with col1:
     #st.write("")
     #st.write("")
     # [CONFIG] Replaced hardcoded path
-    st.image(config.APP_ICON_PATH, use_container_width = False)
+    st.image(config.APP_ICON_PATH, width = "content")
 
 with col2:
     # [CONFIG] Replaced hardcoded title

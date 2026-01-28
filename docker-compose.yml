@@ -1,0 +1,18 @@
+services:
+  model-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.model
+    container_name: model-inference
+
+  ui-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: ui-streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      - INFERENCE_URL=http://model-service:8000/match
+    depends_on:
+      - model-service

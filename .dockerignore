@@ -1,0 +1,17 @@
+# Ignore the heavy data folders from your .gitignore
+Data/Input/
+Data/Output/
+Data/Cleaned_Input/
+
+# Ignore the IDE settings from your .idea/.gitignore
+.idea/
+
+# Ignore the Python junk
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Ignore the Git history (Crucial for image size)
+.git
+.gitignore

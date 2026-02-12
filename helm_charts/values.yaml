@@ -1,0 +1,20 @@
+# helm_charts/values.yaml
+
+# Configuration data exposed via ConfigMap to the containers
+config:
+  # Infrastructure variables used by the UI to locate the Inference service
+  inference:
+    # Must match the Kubernetes Service Name (e.g., 'infomatch-inference')
+    # and the exposed port (8000) of the model container.
+    url: "http://infomatch-inference:8000/match"
+
+  model:
+    # Reference to the model baked into the heavy image
+    name: "all-mpnet-base-v2"
+
+  # Tunable thresholds that can be modified by DevOps via helm install --set
+  thresholds:
+    # Default score threshold shown in the UI
+    scoreDefault: "75"
+    # Specific threshold for the Semantic Matching method
+    semanticDefault: "75"

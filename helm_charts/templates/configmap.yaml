@@ -1,0 +1,15 @@
+# helm_charts/templates/configmap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: infomatch-ui-config
+  labels:
+    app.kubernetes.io/name: infomatch
+    app.kubernetes.io/component: ui
+
+data:
+  INFERENCE_URL: {{ .Values.config.inference.url | quote }}
+  SEMANTIC_MODEL_NAME: {{ .Values.config.model.name | quote }}
+  SCORE_DEFAULT: {{ .Values.config.thresholds.scoreDefault | quote }}
+  SEMANTIC_DEFAULT_THRESHOLD: {{ .Values.config.thresholds.semanticDefault | quote }}

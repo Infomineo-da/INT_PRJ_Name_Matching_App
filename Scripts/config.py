@@ -16,6 +16,7 @@ def get_env(key, default):
 APP_TITLE = "InfoMatch 🔍"
 APP_ICON_PATH = "Data/Square logo small 128x128 px.svg"
 APP_LAYOUT = "wide"
+INFERENCE_URL = get_env("INFERENCE_URL", "http://localhost:8000/match")
 
 # --- File Handling ---
 ALLOWED_EXTENSIONS = ["xlsx", "xls"]
@@ -33,7 +34,7 @@ MATCHING_METHODS = [
 # Score Thresholds
 SCORE_MIN = 60
 SCORE_MAX = 100
-SCORE_DEFAULT = 75
+SCORE_DEFAULT = int(get_env("SCORE_DEFAULT", 75))
 SCORE_STEP = 5
 
 # Metrics
@@ -136,8 +137,8 @@ HYBRID_SEMANTIC_THRESHOLD = 75
 # ==========================================
 
 # NLP Model Configuration
-SEMANTIC_MODEL_NAME = 'all-mpnet-base-v2'
+SEMANTIC_MODEL_NAME = get_env("SEMANTIC_MODEL_NAME", 'all-mpnet-base-v2')
 
 # Default Threshold for Semantic Matching
-SEMANTIC_DEFAULT_THRESHOLD = 75
+SEMANTIC_DEFAULT_THRESHOLD = int(get_env("SEMANTIC_DEFAULT_THRESHOLD", 75))
 

@@ -20,7 +20,8 @@ def semantic_match_blocking(unmatched_df, df2, threshold=config.SEMANTIC_DEFAULT
 
     # 3. Construct the request
     # Note: INFERENCE_URL will be 'http://model-service:8000/match' in Docker/K8s
-    url = config.get_env("INFERENCE_URL", "http://localhost:8000/match")
+    #url = config.get_env("INFERENCE_URL", "http://localhost:8000/match")
+    url = config.INFERENCE_URL
     payload = {
         "queries": df1_texts,
         "corpus": df2_texts,

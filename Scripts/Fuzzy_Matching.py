@@ -3,12 +3,12 @@ from collections import defaultdict
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import pandas as pd
-
+import config
 
 def exact_match(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
 
-    col1_cleaned = [c for c in df1.columns if c.endswith("_cleaned")][0]
-    col2_cleaned = [c for c in df2.columns if c.endswith("_cleaned")][0]
+    col1_cleaned = [c for c in df1.columns if c.endswith(config.SUFFIX_CLEANED)][0]
+    col2_cleaned = [c for c in df2.columns if c.endswith(config.SUFFIX_CLEANED)][0]
 
     # Filter out empty or NaN values before matching
     df1_valid = df1[df1[col1_cleaned].notna() & (df1[col1_cleaned] != "")].copy()
@@ -75,16 +75,10 @@ def map_ui_method_to_fuzzy(ui_method):
     Returns:
         str: The corresponding fuzzy matching method name
     """
-    method_mapping = {
-        "Exact Sequence Match": "ratio",
-        "Substring Inclusion Match": "partial_ratio",
-        "Order-Insensitive Match": "token_sort_ratio",
-        "Core Word Set Match": "token_set_ratio"
-    }
-    return method_mapping.get(ui_method, "token_set_ratio")  # Default to token_set_ratio
+    return config.FUZZY_METHOD_MAPPING.get(ui_method, config.FUZZY_DEFAULT_METHOD)
 
-
-def build_blocks(df, col_cleaned, prefix_len=4):
+# [CONFIG] Replaced default 4
+def build_blocks(df, col_cleaned,prefix_len=config.BLOCK_PREFIX_LENGTH ):
     """Create blocking dictionary for faster lookups."""
     blocks = defaultdict(list)
     for index, name in df[col_cleaned].fillna("").astype(str).items():
@@ -104,7 +98,8 @@ def find_best_fuzzy_match(client_row_tuple, df2, blocks, col1_cleaned, col2_clea
     if not client_cleaned or not isinstance(client_cleaned, str):
         return None
 
-    block_key = client_cleaned[:4]
+    block_key = client_cleaned[:config.BLOCK_PREFIX_LENGTH]
+    # [CONFIG] Replaced hardcoded slice [:4] with config.BLOCK_PREFIX_LENGTH
     candidate_indices = blocks.get(block_key)
     if not candidate_indices:
         return None
@@ -118,7 +113,8 @@ def find_best_fuzzy_match(client_row_tuple, df2, blocks, col1_cleaned, col2_clea
         "token_sort_ratio": fuzz.token_sort_ratio,
         "token_set_ratio": fuzz.token_set_ratio
     }
-    scorer = scorers.get(method, fuzz.token_set_ratio)
+    scorer = scorers.get(method, getattr(fuzz, config.FUZZY_DEFAULT_METHOD))
+    # [CONFIG] Replaced default with config.FUZZY_DEFAULT_METHOD
 
     best_score = 0
     best_match_index = -1
@@ -141,7 +137,7 @@ def find_best_fuzzy_match(client_row_tuple, df2, blocks, col1_cleaned, col2_clea
         return None
 
 
-def fuzzy_match_blocking(unmatched_df, df2, method="token_set_ratio", threshold=80, progress_callback=None):
+def fuzzy_match_blocking(unmatched_df, df2, method=config.FUZZY_DEFAULT_METHOD, threshold=config.FUZZY_DEFAULT_THRESHOLD, progress_callback=None):
     """
     Fuzzy match unmatched_df (df1) against df2 with blocking and parallelization.
     
@@ -152,9 +148,10 @@ def fuzzy_match_blocking(unmatched_df, df2, method="token_set_ratio", threshold=
         threshold (float): Minimum score to consider a match valid
         progress_callback (callable): Function to call with progress updates (0-100) and status message
     """
-    col1_cleaned = [c for c in unmatched_df.columns if c.endswith("_cleaned")][0]
-    col1_sorted = [c for c in unmatched_df.columns if c.endswith("_sorted")][0]
-    col2_cleaned = [c for c in df2.columns if c.endswith("_cleaned")][0]
+    # [CONFIG] Replaced hardcoded suffixes
+    col1_cleaned = [c for c in unmatched_df.columns if c.endswith(config.SUFFIX_CLEANED)][0]
+    col1_sorted = [c for c in unmatched_df.columns if c.endswith(config.SUFFIX_SORTED)][0]
+    col2_cleaned = [c for c in df2.columns if c.endswith(config.SUFFIX_CLEANED)][0]
 
     # Ensure strings
     unmatched_df[col1_cleaned] = unmatched_df[col1_cleaned].fillna("").astype(str)
@@ -173,7 +170,7 @@ def fuzzy_match_blocking(unmatched_df, df2, method="token_set_ratio", threshold=
     total_records = len(unmatched_df)
     fuzzy_results = []
     
-    for i, row in enumerate(unmatched_df[[col1_cleaned, col1_sorted, "unique_id"]].itertuples()):
+    for i, row in enumerate(unmatched_df[[col1_cleaned, col1_sorted, config.ID_COLUMN]].itertuples()):
         result = find_best_fuzzy_match(row, df2, blocks, col1_cleaned, col2_cleaned, method, threshold)
         fuzzy_results.append(result)
         
@@ -191,7 +188,8 @@ def fuzzy_match_blocking(unmatched_df, df2, method="token_set_ratio", threshold=
     df_fuzzy = pd.DataFrame(successful, columns=["unique_id", "df2_index", "match_score"])
 
     # Merge back to get full match info
-    stage3_matches_temp = pd.merge(unmatched_df, df_fuzzy, on="unique_id")
+    # [CONFIG] Replaced "unique_id" with config.ID_COLUMN
+    stage3_matches_temp = pd.merge(unmatched_df, df_fuzzy, on=config.ID_COLUMN)
     stage3_matches = pd.merge(
         stage3_matches_temp,
         df2.add_prefix(""),
@@ -207,9 +205,10 @@ def build_final_output(df1, matched_exact, matched_fuzzy):
     Combine exact and fuzzy matches with unmatched records into a clean final output.
     Only includes original columns, cleaned columns, match score and type.
     """
+    # [CONFIG] Using config variables for suffixes and ID column check
     # Get column names from df1
-    col1_original = [c for c in df1.columns if not c.endswith(('_cleaned', '_sorted', 'unique_id'))][0]
-    col1_cleaned = [c for c in df1.columns if c.endswith('_cleaned')][0]
+    col1_original = [c for c in df1.columns if not c.endswith((config.SUFFIX_CLEANED,config.SUFFIX_SORTED, config.ID_COLUMN))][0]
+    col1_cleaned = [c for c in df1.columns if c.endswith(config.SUFFIX_CLEANED)][0]
     
     # Initialize empty DataFrame with desired columns
     final_output = pd.DataFrame(columns=[
@@ -220,8 +219,8 @@ def build_final_output(df1, matched_exact, matched_fuzzy):
     
     # Process exact matches
     if not matched_exact.empty:
-        col2_original = [c for c in matched_exact.columns if not c.endswith(('_cleaned', '_sorted')) and not c.startswith('unique_id')][1]
-        col2_cleaned = [c for c in matched_exact.columns if c.endswith('_cleaned')][1]
+        col2_original = [c for c in matched_exact.columns if not c.endswith((config.SUFFIX_CLEANED, config.SUFFIX_SORTED)) and not c.startswith(config.ID_COLUMN)][1]
+        col2_cleaned = [c for c in matched_exact.columns if c.endswith(config.SUFFIX_CLEANED)][1]
         
         exact_df = pd.DataFrame({
             col1_original: matched_exact[col1_original],
@@ -236,14 +235,14 @@ def build_final_output(df1, matched_exact, matched_fuzzy):
     # Process fuzzy/semantic matches
     if not matched_fuzzy.empty:
         # First find the cleaned column that isn't col1_cleaned
-        all_cleaned_cols = [c for c in matched_fuzzy.columns if c.endswith('_cleaned')]
+        all_cleaned_cols = [c for c in matched_fuzzy.columns if c.endswith(config.SUFFIX_CLEANED)]
         col2_cleaned = next(col for col in all_cleaned_cols if col != col1_cleaned)
         
         # Find the original column by removing the '_cleaned' suffix
-        col2_base = col2_cleaned.replace('_cleaned', '')
+        col2_base = col2_cleaned.replace(config.SUFFIX_CLEANED, '')
         col2_original = next(col for col in matched_fuzzy.columns 
-                           if not col.endswith(('_cleaned', '_sorted')) 
-                           and col.replace('_cleaned', '') == col2_base)
+                           if not col.endswith((config.SUFFIX_CLEANED, config.SUFFIX_SORTED))
+                           and col.replace(config.SUFFIX_CLEANED, '') == col2_base)
         
         fuzzy_df = pd.DataFrame({
             col1_original: matched_fuzzy[col1_original],

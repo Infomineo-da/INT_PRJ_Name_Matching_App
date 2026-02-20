@@ -1,13 +1,18 @@
 import streamlit as st
 import pandas as pd
 import io
+import config
 from Data_Cleaning import clean_dataframe
 from Fuzzy_Matching import exact_match, fuzzy_match_blocking, build_final_output, map_ui_method_to_fuzzy
 from Hypird_Matching import hybrid_match_blocking
 from Semantic_Matching import semantic_match_blocking
 
 
-st.set_page_config(page_title="InfoMatch 🔍",page_icon="Data/Square logo small 128x128 px.svg", layout="wide")
+st.set_page_config(
+    page_title=config.APP_TITLE,         # [CONFIG] Replaced "InfoMatch 🔍"
+    page_icon=config.APP_ICON_PATH,      # [CONFIG] Replaced path string
+    layout=config.APP_LAYOUT             # [CONFIG] Replaced "wide"
+)
 
 
 # Title
@@ -17,18 +22,20 @@ col1, col2 = st.columns([1, 15]) # Adjust the ratio to fit your logo size
 with col1:
     #st.write("")
     #st.write("")
-    st.image("Data/Square logo small 128x128 px.svg", use_container_width = False) # Adjust width as needed
+    # [CONFIG] Replaced hardcoded path
+    st.image(config.APP_ICON_PATH, width = "content")
 
 with col2:
-    st.title("InfoMatch 🔍")
-#st.title("**InfoMatch**🔍")
+    # [CONFIG] Replaced hardcoded title
+    st.title(config.APP_TITLE)
+
 
 # Upload Section
 uploaded_file = st.file_uploader(
 """Upload your Excel file: containing two text columns to match.\n
 • **Column 1: Principal Column** (The main list)\n
 • **Column 2: Match Column** (The list to be compared to the principal list)"""
-, type=["xlsx", "xls"])
+, type=config.ALLOWED_EXTENSIONS) # [CONFIG] Replaced ["xlsx", "xls"]
 
 # Preview uploaded file
 if uploaded_file:
@@ -94,33 +101,23 @@ with dropdown:
     matching_method = st.selectbox(
         #: Click on the ℹ️ icon for details.
         "**Choose a Matching Technique**",
-        ["Exact Sequence Match", "Substring Inclusion Match", "Order-Insensitive Match", "Core Word Set Match",
-         "Semantic Match","Hybrid Match"]
+        config.MATCHING_METHODS  # [CONFIG] Replaced hardcoded list
     )
 with score:
-    score=st.number_input("Minimum Score Threshold", min_value=60, max_value=100, value=75, step=5)
+    # [CONFIG] Replaced min, max, value, and step
+    score = st.number_input(
+        "Minimum Score Threshold",
+        min_value=config.SCORE_MIN,
+        max_value=config.SCORE_MAX,
+        value=config.SCORE_DEFAULT,
+        step=config.SCORE_STEP
+    )
 with icon:
     # Push popover down a bit to alighn with the title
     st.markdown("<br>", unsafe_allow_html=True)
     with st.popover("ℹ️",help="Description of matching methods"):
-        st.markdown("""
-        #### **Choose the matching methodology**
-        ##### **FuzzyWuzzy**
-        - **Exact Sequence Match**: Performs a strict, full-string comparison. This method is ideal when both strings are already normalized and the exact order of characters matters.
-        - **Substring Inclusion Match**: Detects cases where one string is embedded within another, such as matching abbreviations, truncated forms, or shorter references to longer text descriptions.
-        - **Order-Insensitive Match**: Evaluates similarity based on the same set of words appearing in different orders. Useful when word arrangement varies but the overall content remains equivalent.
-        - **Core Word Set Match**: Focuses on the shared subset of words between two strings, while ignoring additional or extraneous terms. Well-suited for noisy or descriptive data where extra details may be present.
-        ##### **Semantic Matching**
-        - **SentenceTransformer**: It's effective for understanding context, synonyms, and paraphrases. learned from billions of sentences.
-        ##### **Minimum Score Threshold**
-        The Minimum Score Threshold defines the lowest similarity score required for two text values to be considered a valid match.
-        It acts as a filter to exclude weak or irrelevant matches, ensuring that only results with sufficient similarity are accepted.
-        - **Range**: 60% (minimum) and above
-        - **Guideline**: The higher the threshold, the stricter and more accurate the matching results will be.
-        - **Example**: A threshold of 60% allows moderately similar text to qualify as a match, while 85–90% ensures only very closely related text pairs are considered.
-        ##### **Disclaimer**: 
-        Sentence transformers capture semantic meaning but may over-match by treating related concepts as equivalent, leading to false positives. Fuzzy matching, on the other hand, focuses on text similarity but may under-match when the same concept is expressed in different wording.
-        """)
+        # [CONFIG] Replaced long markdown text
+        st.markdown(config.HELP_TEXT_MARKDOWN)
 
 st.write(f"You selected: **{matching_method}** with Threshold of **{score}**")
 
@@ -129,15 +126,10 @@ st.write(f"You selected: **{matching_method}** with Threshold of **{score}**")
 with st.form("stop_words_form"):
     stop_words = st.text_area(
     "**Ignore Words**: List any words to exclude from the comparison process. These words will not influence the name-matching score. Separate multiple entries with commas.",
-    placeholder="e.g. station, fuel, gas, corp, ltd, inc, group, university, hospital, restaurant"
+    placeholder=config.STOP_WORDS_PLACEHOLDER # [CONFIG] Replaced placeholder text
     )
-    st.caption(
-    "These are common or generic words that don’t change the actual name:\n"
-    "- For gas stations → station, fuel, gas, etc.\n"
-    "- For companies → corp, ltd, inc, co, group, etc.\n"
-    "- For hospitals → hospital, clinic, medical center, etc.\n"
-    "- You may also ignore common words like -> the, in, a, of, over, etc. but be careful! Sometimes they are part of the real name"
-    )
+    # [CONFIG] Replaced caption text
+    st.caption(config.STOP_WORDS_CAPTION)
     # Add spacer and submit button - uses st.write() for spacing instead of hardcoded columns
     _, col_button = st.columns([10, 1])  # Dynamic ratio that adapts to screen size
     with col_button:
@@ -228,7 +220,7 @@ if uploaded_file and submitted:
                 unmatched_df,
                 cleaned_df2,
                 threshold=score,
-                fuzzy_method="token_set_ratio",   # default fuzzy method
+                fuzzy_method=config.HYBRID_FUZZY_METHOD_DEFAULT,   # [CONFIG] Replaced "token_set_ratio"
                 semantic_threshold=score,         # reuse same threshold
                 progress_callback=lambda p, msg: (progress_bar.progress(p), status_text.text(msg))
                 )
@@ -264,10 +256,10 @@ if uploaded_file and submitted:
                             f"{avg_score:.1f}%")
             with col3:
                 if not stage3_matches.empty:
-                    high_quality = len(stage3_matches[stage3_matches['match_score'] >= 90])
-                    st.metric("High Quality Matches (≥90%)", 
-                            f"{high_quality:,} records")
-            
+                    # [CONFIG] Replaced hardcoded 90
+                    high_quality = len(stage3_matches[stage3_matches['match_score'] >= config.HIGH_QUALITY_THRESHOLD])
+                    st.metric(f"High Quality Matches (≥{config.HIGH_QUALITY_THRESHOLD}%)",
+                              f"{high_quality:,} records")
             #stage3_matches.to_excel(f'Data/Output/matched_{match_type}.xlsx', index=False)
         except Exception as e:
             st.error(f"⚠️ Stage 3 failed: {e}")

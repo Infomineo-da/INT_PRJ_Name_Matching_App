@@ -1,33 +1,17 @@
 import os
 import re
 import pandas as pd
+import config
 
-# Keep your constants
-LEGAL_DESIGNATORS = [
-    'PRIVATE LIMITED', 'PVT LTD', 'LIMITED', 'LTD', 'INCORPORATED', 'INC',
-    'CORPORATION', 'CORP', 'PLC', 'LLC', 'LLP', 'LP', 'COMPANY', 'CO',
-    'GMBH', 'AG', 'SA', 'SL', 'SARL', 'NV', 'BV',
-    'PUBLIC LIMITED COMPANY', 'SAE', 'SAOG', 'BSC', 'PJSC', 'PSC', 'KSC',
-    'WLL', 'FZE', 'FZC', 'DMCC'
-]
 
-REPLACEMENTS = {
-    '&': ' AND ',
-    'INTL': 'INTERNATIONAL',
-    'MFG': 'MANUFACTURING',
-    'TECH': 'TECHNOLOGY',
-    'SOLNS': 'SOLUTIONS',
-    'SVCS': 'SERVICES',
-    'MKTG': 'MARKETING',
-    'TRDG': 'TRADING'
-}
 
 def merge_stop_words(user_stop_words: list) -> list:
     """
     Merge user stop words into LEGAL_DESIGNATORS without duplicates.
     Returns a combined list.
     """
-    merged = set(LEGAL_DESIGNATORS)  # base set
+    # [CONFIG] Replaced local LEGAL_DESIGNATORS with config.LEGAL_DESIGNATORS
+    merged = set(config.LEGAL_DESIGNATORS)  # base set
     for sw in user_stop_words:
         sw = sw.strip().upper()
         if sw and sw not in merged:
@@ -42,7 +26,8 @@ def clean_text(name: str, stop_words: list = None) -> str:
     # 1. Convert to uppercase for consistent processing
     cleaned = name.upper()
     # 2. Perform replacements BEFORE removing special characters
-    for old, new in REPLACEMENTS.items():
+    # [CONFIG] Replaced local REPLACEMENTS with config.CLEANING_REPLACEMENTS
+    for old, new in config.CLEANING_REPLACEMENTS.items():
         if old == "&":
         # Special case for ampersand: allow spaces around it
             cleaned = re.sub(r'\s*&\s*', f'{new}', cleaned)
@@ -90,22 +75,27 @@ def clean_dataframe(df: pd.DataFrame, columns_to_clean: list, stop_words: list =
         if col not in df.columns:
             raise ValueError(f"Column '{col}' not found in DataFrame. Available: {list(df.columns)}")
 
-        df[f"{col}_cleaned"] = df[col].apply(lambda x: clean_text(x, stop_words))
-        df[f"{col}_sorted"] = df[f"{col}_cleaned"].apply(create_sorted_key)
+        # [CONFIG] Replaced hardcoded "_cleaned" suffix
+        df[f"{col}{config.SUFFIX_CLEANED}"] = df[col].apply(lambda x: clean_text(x, stop_words))
+        # [CONFIG] Replaced hardcoded "_cleaned" and "_sorted" suffixes
+        df[f"{col}{config.SUFFIX_SORTED}"] = df[f"{col}{config.SUFFIX_CLEANED}"].apply(create_sorted_key)
+
     
     # Remove rows where cleaned text is empty or just whitespace
     for col in columns_to_clean:
         df = df[
-            df[f"{col}_cleaned"].notna() & 
-            (df[f"{col}_cleaned"].str.strip() != "")
+            # [CONFIG] Replaced hardcoded "_cleaned" suffix
+            df[f"{col}{config.SUFFIX_CLEANED}"].notna() &
+            (df[f"{col}{config.SUFFIX_CLEANED}"].str.strip() != "")
         ]
     
     # Reset index after removing empty rows
     df = df.reset_index(drop=True)
     
     # Add unique_id if it doesn't exist
-    if "unique_id" not in df.columns:
-        df['unique_id'] = range(len(df))
+    # [CONFIG] Replaced hardcoded "unique_id" column name
+    if config.ID_COLUMN not in df.columns:
+        df[config.ID_COLUMN] = range(len(df))
     
     return df
 """

@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+ENV SENTENCE_TRANSFORMERS_HOME=/app/models
+
+WORKDIR /app
+RUN pip install --no-cache-dir fastapi uvicorn sentence-transformers torch --extra-index-url https://download.pytorch.org/whl/cpu
+
+# Bake the model
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-mpnet-base-v2', cache_folder='/app/models')"
+
+COPY model_service.py .
+EXPOSE 8000
+CMD ["python", "model_service.py"]
